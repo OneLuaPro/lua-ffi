@@ -1,17 +1,44 @@
 /* SPDX-License-Identifier: MIT */
 /*
  * Author: Jianhui Zhao <zhaojh329@gmail.com>
+ * Port for OneLuaPro: Kritzel Kratzel <kritzel.kratzel@gmx.de>
  */
 
+#ifdef _WINDLL
+#include <windows.h>
+#include <io.h>
+#include <BaseTsd.h>
+// Non-Win types somewhat guessed by comparison with CentOS
+#define ssize_t SSIZE_T
+#define suseconds_t LONG
+#define useconds_t LONG
+#define gid_t unsigned short
+#define pid_t int
+#define mode_t unsigned int
+#define nlink_t unsigned long
+#define uid_t unsigned int
+#define blksize_t long int
+#define blkcnt_t long int
+#define DLL __declspec(dllexport)
+#include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+#else
+#define DLL //empty
+#include <lauxlib.h>
+#include <lualib.h>
+#endif
 
 #include <sys/types.h>
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#ifdef _WINDLL
+#include <malloc.h>
+#else
 #include <alloca.h>
+#endif
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <math.h>
@@ -855,7 +882,7 @@ static bool cdata_from_lua_table(lua_State *L, struct ctype *ct, void *ptr, int 
                 lua_pop(L, 1);
                 break;
             }
-            cdata_from_lua(L, ct->array->ct, ptr + ctype_sizeof(ct->array->ct) * i++, lua_absindex(L, -1), cast);
+            cdata_from_lua(L, ct->array->ct,(char *)ptr + ctype_sizeof(ct->array->ct) * i++, lua_absindex(L, -1), cast);
             lua_pop(L, 1);
         }
         return true;
@@ -870,7 +897,7 @@ static bool cdata_from_lua_table(lua_State *L, struct ctype *ct, void *ptr, int 
             }
 
             if (!lua_isnil(L, -1))
-                cdata_from_lua(L, field->ct, ptr + field->offset, lua_absindex(L, -1), cast);
+                cdata_from_lua(L, field->ct, (char *)ptr + field->offset, lua_absindex(L, -1), cast);
             lua_pop(L, 1);
         }
         return true;
@@ -991,7 +1018,7 @@ static int cdata_index_ptr(lua_State *L, struct cdata *cd, struct ctype *ct, boo
         }
         lua_pop(L, 2);
 
-        cdata_to_lua(L, ct, ptr + ctype_sizeof(ct) * idx);
+        cdata_to_lua(L, ct, (char *)ptr + ctype_sizeof(ct) * idx);
 
         if (luaL_testudata(L, -1, CDATA_MT)) {
             lua_rawgetp(L, LUA_REGISTRYINDEX, cd);
@@ -1001,7 +1028,7 @@ static int cdata_index_ptr(lua_State *L, struct cdata *cd, struct ctype *ct, boo
         }
         return 1;
     } else {
-        return cdata_from_lua(L, ct, ptr + ctype_sizeof(ct) * idx, 3, false);
+        return cdata_from_lua(L, ct, (char *)ptr + ctype_sizeof(ct) * idx, 3, false);
     }
 }
 
@@ -1076,7 +1103,7 @@ static int cdata_index_crecord(lua_State *L, struct cdata *cd, struct ctype *ct,
     }
 
     if (to) {
-        cdata_to_lua(L, field->ct, ptr + offset);
+        cdata_to_lua(L, field->ct, (char *)ptr + offset);
         if (luaL_testudata(L, -1, CDATA_MT)) {
             lua_rawgetp(L, LUA_REGISTRYINDEX, cd);
             lua_pushvalue(L, -2);
@@ -1085,7 +1112,7 @@ static int cdata_index_crecord(lua_State *L, struct cdata *cd, struct ctype *ct,
         }
         return 1;
     } else {
-        return cdata_from_lua(L, field->ct, ptr + offset, 3, false);
+        return cdata_from_lua(L, field->ct, (char *)ptr + offset, 3, false);
     }
 }
 
@@ -2397,7 +2424,7 @@ static int lua_ffi_copy(lua_State *L)
     if (lua_gettop(L) < 3) {
         src = luaL_checklstring(L, 2, &len);
         memcpy(dst, src, len);
-        ((char *)dst)[len++] = '\0';
+        ((char *)dst)[len] = '\0';
     } else {
         len = luaL_checkinteger(L, 3);
 
@@ -2469,12 +2496,18 @@ static void createmetatable(lua_State *L, const char *name, const struct luaL_Re
 
 static void create_nullptr(lua_State *L)
 {
+#ifndef _MSC_VER
+    // Currently segfaults on Win10 with MSVC
     struct ctype *ct = ctype_new(L, false);
     ctype_to_ptr(L, ct);
     cdata_ptr_set(cdata_new(L, ct, NULL), NULL);
+#else
+    // Pushing NULL als lightuserdata has the same effect
+    lua_pushlightuserdata (L, NULL);
+#endif
 }
 
-int luaopen_ffi(lua_State *L)
+DLL int luaopen_ffi(lua_State *L)
 {
     lua_newtable(L);
     lua_rawsetp(L, LUA_REGISTRYINDEX, &crecord_registry);
@@ -2501,7 +2534,7 @@ int luaopen_ffi(lua_State *L)
     luaL_newlib(L, methods);
 
     lua_pushstring(L, LUA_FFI_VERSION_STRING);
-    lua_setfield(L, -2, "VERSION");
+    lua_setfield(L, -2, "_VERSION");
 
     create_nullptr(L);
     lua_setfield(L, -2, "nullptr");
