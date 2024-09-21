@@ -1210,8 +1210,8 @@ static ffi_type *lua_to_vararg(lua_State *L, int idx)
 static int cdata_call(lua_State *L)
 {
     struct cdata *cd = luaL_checkudata(L, 1, CDATA_MT);
-    ffi_type *args[MAX_FUNC_ARGS] = {};
-    void *values[MAX_FUNC_ARGS] = {};
+    ffi_type *args[MAX_FUNC_ARGS];	// = {};	// C23 only
+    void *values[MAX_FUNC_ARGS];	// = {};	// C23 only
     struct ctype *ct = cd->ct;
     int i, status, narg;
     struct cfunc *func;
@@ -1572,7 +1572,8 @@ static int cparse_record_field(lua_State *L, struct crecord_field **fields)
 
     while (true) {
         struct crecord_field *field;
-        struct ctype bt = {}, ct;
+        struct ctype bt; 	// = {}	// C23 only
+        struct ctype ct;
         bool flexible = false;
         int array_size;
         char *name;
@@ -1933,7 +1934,7 @@ static int cparse_basetype(lua_State *L, int tok, struct ctype *ct)
 
 static int cparse_function(lua_State *L, int tok, struct ctype *rtype)
 {
-    struct ctype args[MAX_FUNC_ARGS] = {};
+  struct ctype args[MAX_FUNC_ARGS]; 	// = {};	// C23 only
     struct cfunc *func;
     int i, narg = 0;
     bool va = false;
