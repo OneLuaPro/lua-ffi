@@ -56,7 +56,7 @@ project(lua-ffi LANGUAGES C)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 # Version settings
 set(LUA_FFI_VERSION_MAJOR 1)
-set(LUA_FFI_VERSION_MINOR 0)
+set(LUA_FFI_VERSION_MINOR 1)
 set(LUA_FFI_VERSION_PATCH 0)
 
 # ------------------------------------------------------------------------------
