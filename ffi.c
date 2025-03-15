@@ -1573,8 +1573,12 @@ static int cparse_record_field(lua_State *L, struct crecord_field **fields)
 
     while (true) {
         struct crecord_field *field;
+#ifdef _MSC_VER
         struct ctype bt; 	// = {}	// C23 only
         struct ctype ct;
+#else
+        struct ctype bt = {}, ct;
+#endif
         bool flexible = false;
         int array_size;
         char *name;
