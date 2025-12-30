@@ -877,15 +877,18 @@ static bool cdata_from_lua_table(lua_State *L, struct ctype *ct, void *ptr, int 
     int i = 0;
 
     if (ct->type == CTYPE_ARRAY) {
-        while (i < ct->array->size) {
-            lua_rawgeti(L, idx, i + 1);
-            if (lua_isnil(L, -1)) {
-                lua_pop(L, 1);
-                break;
+        lua_pushnil(L);
+
+        while (lua_next(L, idx)) {
+            if (lua_isinteger(L, -2)) {
+                i = lua_tointeger(L, -2) - 1;
+                if (i < ct->array->size)
+                    cdata_from_lua(L, ct->array->ct, (char *)ptr + ctype_sizeof(ct->array->ct) * i,
+                            lua_absindex(L, -1), cast);
             }
-            cdata_from_lua(L, ct->array->ct,(char *)ptr + ctype_sizeof(ct->array->ct) * i++, lua_absindex(L, -1), cast);
             lua_pop(L, 1);
         }
+
         return true;
     } else if (ct->type == CTYPE_RECORD) {
         while (i < ct->rc->nfield) {
@@ -1319,6 +1322,20 @@ static int cdata_call(lua_State *L)
     return luaL_error(L, "unsupported return type '%s'", ctype_name(rtype));
 }
 
+static int cdata_len(lua_State *L)
+{
+    struct cdata *cd = luaL_checkudata(L, 1, CDATA_MT);
+
+    if (cd->ct->type != CTYPE_ARRAY) {
+        __ctype_tostring(L, cd->ct);
+        return luaL_error(L, "attempt to get length of non-array cdata<%s>", lua_tostring(L, -1));
+    }
+
+    lua_pushinteger(L, cd->ct->array->size);
+
+    return 1;
+}
+
 static int cdata_gc(lua_State *L)
 {
     struct cdata *cd = luaL_checkudata(L, 1, CDATA_MT);
@@ -1344,6 +1361,7 @@ static const luaL_Reg cdata_methods[] = {
     {"__newindex", cdata_newindex},
     {"__eq", cdata_eq},
     {"__call", cdata_call},
+    {"__len", cdata_len},
     {"__gc", cdata_gc},
     {NULL, NULL}
 };
@@ -2394,14 +2412,8 @@ static int lua_ffi_string(lua_State *L)
         goto converr;
     }
 
-    switch (ct->type) {
-    case CTYPE_VOID:
-    case CTYPE_CHAR:
-    case CTYPE_UCHAR:
-        break;
-    default:
+    if (ct->type != CTYPE_CHAR)
         goto converr;
-    }
 
     if (array && array->size) {
         char *p = memchr(ptr, '\0', array->ft.size);

@@ -107,22 +107,24 @@ local tests = {
     end,
     function()
         local buf = ffi.gc(ffi.C.malloc(128), ffi.C.free)
+        local str = ffi.cast('const char *', buf)
 
         -- note: for lua 5.1 and 5.2, numbers like 2.0, 3.0, will be treated as integers
         -- but in OpenWrt, there is a patch for lua5.1 to support distinguish integer type.
         local n = ffi.C.sprintf(buf, '%s %d %.2f %.2f', 'hello', 1, 2.1, 3.3)
         assert(n == 17)
-        assert(ffi.string(buf) == 'hello 1 2.10 3.30')
+        assert(ffi.string(str) == 'hello 1 2.10 3.30')
     end,
     function()
         local buf = ffi.gc(ffi.C.malloc(128), ffi.C.free)
+        local str = ffi.cast('const char *', buf)
 
         local a1 = ffi.new('int', 1)
         local a2 = ffi.new('double', 2.0)
 
         local n = ffi.C.sprintf(buf, '%s %d %.2f %.2f', 'hello', a1, a2, 3.3)
         assert(n == 17)
-        assert(ffi.string(buf) == 'hello 1 2.00 3.30')
+        assert(ffi.string(str) == 'hello 1 2.00 3.30')
     end,
     function()
         ffi.cdef([[
@@ -173,6 +175,18 @@ local tests = {
 
         p:add(1, 1)
         assert(p.x == 46 and p.y == 68)
+    end,
+    function()
+        local a = ffi.new('int [10]', { [5] = 5, 1, 2 })
+        assert(a[0] == 1)
+        assert(a[1] == 2)
+        assert(a[4] == 5)
+
+        assert(#a == 10)
+
+        for i = 5, #a - 1 do
+            assert(a[i] == 0)
+        end
     end
 }
 
