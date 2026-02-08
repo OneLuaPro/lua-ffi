@@ -137,10 +137,16 @@ install(TARGETS lua-ffi
 
 # Docs and Tests
 install(
-  FILES README.md tests/basetype.lua tests/wintest.lua
+  FILES lua-ffi.html
   DESTINATION ${INSTALL_DOCDIR}
   COMPONENT doc
 )
+install(
+  FILES tests/basetype.lua tests/wintest.lua
+  DESTINATION ${INSTALL_DOCDIR}/tests
+  COMPONENT doc
+)
+
 # ------------------------------------------------------------------------------
 # Keep original CMakeLists.txt untouched
 else()
