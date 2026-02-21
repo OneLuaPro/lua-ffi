@@ -4,6 +4,15 @@
 local ffi = require "ffi"
 local lfs = require "lfs"
 
+-- Load C standard library
+local ok, libc = pcall(ffi.load, "ucrtbase")
+if not ok then
+   ok, libc = pcall(ffi.load, "msvcrt")
+end
+if not ok then
+   error("Could not load C standard library (ucrtbase.dll or msvcrt.dll not found).")
+end
+
 -- Declaration of utilized C-functions
 -- https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/crt-alphabetical-function-reference
 -- std lib functions
@@ -11,8 +20,8 @@ ffi.cdef([[
    void srand(unsigned int seed);
    int rand(void);
    size_t strlen(const char *str);
+   int64_t _time64(int64_t *destTime);
    char *_strtime(char *timestr);
-   time_t time(time_t *destTime);
 ]])
 -- National Instruments DAQmx fubnctions (ffi.cdef may be called not just one time)
 ffi.cdef([[
@@ -28,9 +37,9 @@ print("   C-declaration: int rand(void);")
 for i=1, 10 do
    if i == 1 then
       print("   Setting random seed to 12345.")
-      ffi.C.srand(12345)
+      libc.srand(12345)
    end
-   io.write(string.format("   %d",ffi.C.rand()))
+   io.write(string.format("   %d",libc.rand()))
 end
 print("\nDone.\n")
 
@@ -40,7 +49,7 @@ print("   C-declaration: size_t strlen(const char *str);")
 local teststr = "The quick brown fox jumps over the lazy dog."
 print(string.format("   The test string is '%s'",teststr))
 print(string.format("   Lua: #teststr = %d",#teststr))
-print(string.format("   C: strlen(..) = %d",ffi.C.strlen(teststr)))
+print(string.format("   C: strlen(..) = %d",libc.strlen(teststr)))
 print("Done.\n")
 
 -- https://github.com/q66/cffi-lua/blob/master/tests/cast.lua
@@ -82,15 +91,15 @@ print("Done.\n")
 print("Testing char[] passing to _strtime() ...")
 print("   C-declaration: char *_strtime(char *timestr);")
 local buf=ffi.new("char[]",9)
-print(string.format("   Current time is %s",ffi.string(ffi.C._strtime(buf))))
+print(string.format("   Current time is %s",ffi.string(libc._strtime(buf))))
 print("Done.\n")
 
 -- https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/time-time32-time64
 print("Testing seconds elapsed since midnight (00:00:00), January 1, 1970 ...")
-print("   C-declaration: time_t time(time_t *destTime);")
-print(string.format("   Using function return value : %d",ffi.C.time(ffi.nullptr)))
-local t = ffi.new("time_t")
-ffi.C.time(ffi.addressof(t))
+print("   C-declaration: int64_t _time64(time_t *destTime);")
+print(string.format("   Using function return value : %d",libc._time64(ffi.nullptr)))
+local t = ffi.new("int64_t")
+libc._time64(ffi.addressof(t))
 print(string.format("   Using destTime argument     : %d",ffi.tonumber(t)))
 print("Done.\n")
 
@@ -138,3 +147,5 @@ else
    print(string.format("   DAQmxGetSysNIDAQUpdateVersion = %d",ffi.tonumber(arg)))
 end
 print("Done.\n")
+
+print("All tests PASSED.")

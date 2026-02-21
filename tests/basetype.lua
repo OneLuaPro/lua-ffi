@@ -109,3 +109,5 @@ assert(tostring(ffi.typeof('time_t')) == 'ctype<time_t>')
 
 assert(tostring(ffi.typeof('struct ComplexStruct')) == 'ctype<struct ComplexStruct>')
 assert(tostring(ffi.typeof('Point')) == 'ctype<struct Point>')
+
+print("All tests PASSED.")
