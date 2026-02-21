@@ -116,13 +116,11 @@ target_include_directories(lua-ffi PRIVATE ${LIBLUA_INCLUDEDIR}
   ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 # requires static build of libffi
-target_compile_options(lua-ffi PRIVATE /D_WINDLL /D_WIN32 /D_CRT_SECURE_NO_WARNINGS /DFFI_STATIC_BUILD)
-target_link_options(lua-ffi PRIVATE
-  /LIBPATH:${LIBLUA_LIBDIR} liblua.lib
-  /LIBPATH:${LIBLUA_LIBDIR} libffi.lib
-  ws2_32.lib
+target_compile_definitions(lua-ffi PRIVATE
+  _WINDLL _WIN32 _CRT_SECURE_NO_WARNINGS FFI_STATIC_BUILD
 )
-target_link_libraries(lua-ffi dlfcn-win32::dl)
+target_link_directories(lua-ffi PRIVATE ${LIBLUA_LIBDIR})
+target_link_libraries(lua-ffi PRIVATE liblua libffi ws2_32 dlfcn-win32::dl)
 set_target_properties(lua-ffi PROPERTIES OUTPUT_NAME ffi PREFIX "")
 
 # plattform-independend sources
