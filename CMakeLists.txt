@@ -135,12 +135,12 @@ install(TARGETS lua-ffi
 
 # Docs and Tests
 install(
-  FILES lua-ffi.html
+  FILES USAGE.html
   DESTINATION ${INSTALL_DOCDIR}
   COMPONENT doc
 )
 install(
-  FILES tests/basetype.lua tests/wintest.lua
+  FILES tests/wintest.lua
   DESTINATION ${INSTALL_DOCDIR}/tests
   COMPONENT doc
 )
