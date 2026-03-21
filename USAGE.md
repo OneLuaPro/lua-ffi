@@ -1,5 +1,29 @@
 # lua-ffi Usage Guide
 
+**Note for OneLuaPro Users on Windows:** Unlike on POSIX systems, standard C library functions (libc) are not automatically exported to the global namespace under Windows. Therefore, accessing them via `ffi.C` (as shown in the following sections of this document) will fail. You must explicitly load the Universal C Runtime (UCRT) using `local libc = ffi.load("ucrtbase")`, as demonstrated in this interactive example:
+
+```lua
+> ffi = require("ffi")
+> ffi.cdef([[ int puts(const char *s); ]])
+> ffi.C.puts("hello")
+stdin:1: undefined function 'puts'
+stack traceback:
+        [C]: in metamethod 'index'
+        stdin:1: in main chunk
+        [C]: in ?
+> libc = ffi.load("ucrtbase")
+> libc.puts("hello")
+hello
+0
+>
+```
+
+Please keep this in mind when testing the following examples. Simply load `libc` as shown above and replace all subsequent mentions of `ffi.C` with `libc`.
+
+> [!TIP]
+>
+> If you are using an older system like Windows 7 and `ucrtbase` is not found, try loading the legacy runtime with `ffi.load("msvcrt")` instead.
+
 ## Loading the FFI Library
 
 ```lua
@@ -8,7 +32,7 @@ local ffi = require("ffi")
 
 The module exports functions plus three values:
 
-- `ffi.VERSION`
+- `ffi._VERSION`
 - `ffi.nullptr`
 - `ffi.C`
 
