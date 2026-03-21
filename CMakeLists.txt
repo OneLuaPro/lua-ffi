@@ -91,7 +91,7 @@ message(STATUS "C compiler flags: ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD
 # ------------------------------------------------------------------------------
 # lua-ffi DLL
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-find_package(dlfcn-win32 REQUIRED)
+find_package(dlfcn-win32 CONFIG REQUIRED)
 
 # requires ailability of winflexbison, as cmake's flex_target() does not exist
 # in MSVC build tools
@@ -117,7 +117,7 @@ target_include_directories(lua-ffi PRIVATE ${LIBLUA_INCLUDEDIR}
 
 # requires static build of libffi
 target_compile_definitions(lua-ffi PRIVATE
-  _WINDLL _WIN32 _CRT_SECURE_NO_WARNINGS FFI_STATIC_BUILD
+  _WINDLL _WIN32 _CRT_SECURE_NO_WARNINGS FFI_STATIC_BUILD _CRT_NONSTDC_NO_DEPRECATE
 )
 target_link_directories(lua-ffi PRIVATE ${LIBLUA_LIBDIR})
 target_link_libraries(lua-ffi PRIVATE liblua libffi ws2_32 dlfcn-win32::dl)
