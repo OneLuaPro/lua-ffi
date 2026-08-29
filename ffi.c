@@ -709,7 +709,7 @@ static int __ctype_tostring(lua_State *L, struct ctype *ct)
     bool first_ptr = true;
     luaL_Buffer b;
 
-    luaL_buffinit(L, &b);
+    luaL_buffinit(L, &b);
     ctype_tostring(L, ct, &b, &first_ptr);
     luaL_pushresult(&b);
 
